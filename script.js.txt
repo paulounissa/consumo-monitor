@@ -1,0 +1,115 @@
+// 1. Dicionário de dados: separação modelo por modelo
+const especificacoesMaquinas = {
+    "minicarregadeira_sr175b": {
+        nome: "Minicarregadeira CASE SR175B",
+        tipoCalculo: "hora", // Consumo medido por horas trabalhadas
+        consumoBase: 6.0,    // 6 Litros por hora
+        textoLabel: "Horas Trabalhadas (h):"
+    },
+    "caminhao_vw24280": {
+        nome: "Caminhão VW 24.280",
+        tipoCalculo: "km",   // Consumo medido por quilometragem
+        consumoBase: 2.5,    // 2.5 Km por Litro
+        textoLabel: "Quilometragem Rodada (km):"
+    },
+    "retroescavadeira_580n": {
+        nome: "Retroescavadeira CASE 580N",
+        tipoCalculo: "hora", 
+        consumoBase: 8.0,    // 8 Litros por hora
+        textoLabel: "Horas Trabalhadas (h):"
+    },
+    "motoniveladora_865b": {
+        nome: "Motoniveladora Case 865B",
+        tipoCalculo: "hora", 
+        consumoBase: 16.0,   // 16 Litros por hora
+        textoLabel: "Horas Trabalhadas (h):"
+    }
+};
+
+// Constante ambiental fixa
+const fatorEmissaoCO2 = 2.68; // kg de CO2 por litro de diesel S10
+
+// 2. Evento para mudar o texto da Label dinamicamente (Horas vs Km)
+document.getElementById('modelo').addEventListener('change', function() {
+    const modeloSelecionado = this.value;
+    const dadosModelo = especificacoesMaquinas[modeloSelecionado];
+    
+    // Altera o texto na tela dependendo do que a máquina usa (hora ou km)
+    document.getElementById('label-quantidade').innerText = dadosModelo.textoLabel;
+});
+
+// 3. Função principal de cálculo
+function calcular() {
+    // Captura os valores inseridos pelo usuário
+    const modeloSelecionado = document.getElementById('modelo').value;
+    const quantidade = parseFloat(document.getElementById('quantidade').value);
+    const precoDiesel = parseFloat(document.getElementById('preco-diesel').value);
+
+    // Validação de segurança
+    if (isNaN(quantidade) || isNaN(precoDiesel)) {
+        alert("Por favor, preencha os campos numéricos corretamente antes de calcular.");
+        return;
+    }
+
+    // Busca os dados da máquina selecionada
+    const dadosModelo = especificacoesMaquinas[modeloSelecionado];
+    let litrosConsumidos = 0;
+
+    // Lógica condicional: Multiplica se for hora, divide se for Km
+    if (dadosModelo.tipoCalculo === "hora") {
+        litrosConsumidos = quantidade * dadosModelo.consumoBase;
+    } else if (dadosModelo.tipoCalculo === "km") {
+        litrosConsumidos = quantidade / dadosModelo.consumoBase;
+    }
+
+    // Cálculos finais
+    const custoTotal = litrosConsumidos * precoDiesel;
+    const emissaoCO2 = litrosConsumidos * fatorEmissaoCO2;
+
+    // Injeta os valores calculados no HTML
+    document.getElementById('res-litros').innerText = litrosConsumidos.toFixed(1);
+    document.getElementById('res-custo').innerText = custoTotal.toFixed(2);
+    document.getElementById('res-co2').innerText = emissaoCO2.toFixed(1);
+
+    // Mostra a área de resultados e o botão de exportar
+    document.getElementById('resultados').classList.remove('oculto');
+    document.getElementById('btn-exportar').classList.remove('oculto');
+}
+
+// 4. Função para exportar os dados para Excel (formato CSV)
+function exportarCSV() {
+    // Capturar os textos exatos que estão na tela no momento
+    const selectModelo = document.getElementById('modelo');
+    const nomeMaquina = selectModelo.options[selectModelo.selectedIndex].text;
+    const quantidade = document.getElementById('quantidade').value;
+    
+    const litros = document.getElementById('res-litros').innerText;
+    const custo = document.getElementById('res-custo').innerText;
+    const co2 = document.getElementById('res-co2').innerText;
+    
+    // Pega a data atual para registrar o relatório
+    const dataAtual = new Date().toLocaleDateString('pt-BR');
+
+    // Montar a estrutura do arquivo CSV (separado por vírgulas)
+    const cabecalho = "Data,Equipamento,Uso (h/km),Combustivel (L),Custo Operacional (R$),Emissao CO2 (kg)\n";
+    const linhaDeDados = `${dataAtual},"${nomeMaquina}",${quantidade},${litros},${custo},${co2}\n`;
+    
+    // \uFEFF força o Excel a ler a codificação UTF-8 corretamente
+    const conteudoCSV = "\uFEFF" + cabecalho + linhaDeDados;
+
+    // Criar o arquivo virtual na memória do navegador
+    const blob = new Blob([conteudoCSV], { type: 'text/csv;charset=utf-8;' });
+    const urlVirtual = URL.createObjectURL(blob);
+    
+    // Forçar o download
+    const linkDownload = document.createElement("a");
+    linkDownload.setAttribute("href", urlVirtual);
+    
+    const nomeArquivo = "relatorio_consumo_" + dataAtual.replace(/\//g, '-') + ".csv";
+    linkDownload.setAttribute("download", nomeArquivo);
+    
+    linkDownload.style.visibility = 'hidden';
+    document.body.appendChild(linkDownload);
+    linkDownload.click();
+    document.body.removeChild(linkDownload);
+}

@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Monitor de Consumo e Emissões</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="container">
+        <h2>Calculadora de Consumo e Emissões</h2>
+        
+        <div class="form-group">
+            <label for="modelo">Selecione o Equipamento:</label>
+            <select id="modelo">
+                <option value="minicarregadeira_sr175b">Minicarregadeira CASE SR175B</option>
+                <option value="caminhao_vw24280">Caminhão VW 24.280 Basculante</option>
+                <option value="retroescavadeira_580n">Retroescavadeira CASE 580N</option>
+                <option value="motoniveladora_865b">Motoniveladora Case 865B</option>
+            </select>
+        </div>
+
+        <div class="form-group">
+            <label id="label-quantidade" for="quantidade">Horas Trabalhadas (h):</label>
+            <input type="number" id="quantidade" placeholder="Ex: 8" step="0.1" min="0">
+        </div>
+
+        <div class="form-group">
+            <label for="preco-diesel">Preço do Diesel S10 (R$/L):</label>
+            <input type="number" id="preco-diesel" placeholder="Ex: 5.90" step="0.01" min="0">
+        </div>
+
+        <button onclick="calcular()">Calcular Impacto</button>
+
+        <div id="resultados" class="resultados oculto">
+            <h3>Relatório Operacional:</h3>
+            <p><strong>Combustível Consumido:</strong> <span id="res-litros">0</span> Litros</p>
+            <p><strong>Custo Operacional:</strong> R$ <span id="res-custo">0.00</span></p>
+            <p><strong>Pegada de Carbono:</strong> <span id="res-co2">0</span> kg de CO₂</p>
+        </div>
+
+        <button id="btn-exportar" class="oculto" style="background-color: #3498db; margin-top: 10px;" onclick="exportarCSV()">
+            ⬇️ Exportar Relatório (CSV)
+        </button>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
