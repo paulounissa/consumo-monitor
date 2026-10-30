@@ -1,112 +1,94 @@
-// 1. Dicionário de dados: separação modelo por modelo
+// 1. Dicionário de dados atualizado com 10 máquinas
 const especificacoesMaquinas = {
-    "minicarregadeira_sr175b": {
-        nome: "Minicarregadeira CASE SR175B",
-        tipoCalculo: "hora", // Consumo medido por horas trabalhadas
-        consumoBase: 6.0,    // 6 Litros por hora
-        textoLabel: "Horas Trabalhadas (h):"
-    },
-    "caminhao_vw24280": {
-        nome: "Caminhão VW 24.280",
-        tipoCalculo: "km",   // Consumo medido por quilometragem
-        consumoBase: 2.5,    // 2.5 Km por Litro
-        textoLabel: "Quilometragem Rodada (km):"
-    },
-    "retroescavadeira_580n": {
-        nome: "Retroescavadeira CASE 580N",
-        tipoCalculo: "hora", 
-        consumoBase: 8.0,    // 8 Litros por hora
-        textoLabel: "Horas Trabalhadas (h):"
-    },
-    "motoniveladora_865b": {
-        nome: "Motoniveladora Case 865B",
-        tipoCalculo: "hora", 
-        consumoBase: 16.0,   // 16 Litros por hora
-        textoLabel: "Horas Trabalhadas (h):"
-    }
+    // === CÁLCULO POR HORA ===
+    "minicarregadeira_sr175b": { nome: "Minicarregadeira CASE SR175B", tipoCalculo: "hora", consumoBase: 6.0, textoLabel: "Horas Trabalhadas (h):" },
+    "retroescavadeira_580n": { nome: "Retroescavadeira CASE 580N", tipoCalculo: "hora", consumoBase: 8.0, textoLabel: "Horas Trabalhadas (h):" },
+    "motoniveladora_865b": { nome: "Motoniveladora Case 865B", tipoCalculo: "hora", consumoBase: 16.0, textoLabel: "Horas Trabalhadas (h):" },
+    "escavadeira_cat320": { nome: "Escavadeira Hidráulica CAT 320", tipoCalculo: "hora", consumoBase: 15.5, textoLabel: "Horas Trabalhadas (h):" },
+    "pa_carregadeira_l120h": { nome: "Pá Carregadeira Volvo L120H", tipoCalculo: "hora", consumoBase: 14.0, textoLabel: "Horas Trabalhadas (h):" },
+    "retroescavadeira_3cx": { nome: "Retroescavadeira JCB 3CX", tipoCalculo: "hora", consumoBase: 7.5, textoLabel: "Horas Trabalhadas (h):" },
+    "minicarregadeira_s530": { nome: "Minicarregadeira Bobcat S530", tipoCalculo: "hora", consumoBase: 5.5, textoLabel: "Horas Trabalhadas (h):" },
+    "rolo_compactador_ca250": { nome: "Rolo Compactador Dynapac CA250", tipoCalculo: "hora", consumoBase: 11.0, textoLabel: "Horas Trabalhadas (h):" },
+    
+    // === CÁLCULO POR KM ===
+    "caminhao_vw24280": { nome: "Caminhão VW 24.280 Basculante", tipoCalculo: "km", consumoBase: 2.5, textoLabel: "Quilometragem Rodada (km):" },
+    "caminhao_atego2730": { nome: "Caminhão MB Atego 2730 Basculante", tipoCalculo: "km", consumoBase: 2.2, textoLabel: "Quilometragem Rodada (km):" }
 };
 
-// Constante ambiental fixa
 const fatorEmissaoCO2 = 2.68; // kg de CO2 por litro de diesel S10
 
-// 2. Evento para mudar o texto da Label dinamicamente (Horas vs Km)
+// Evento para mudar o texto da Label dinamicamente (Horas vs Km)
 document.getElementById('modelo').addEventListener('change', function() {
-    const modeloSelecionado = this.value;
-    const dadosModelo = especificacoesMaquinas[modeloSelecionado];
-    
-    // Altera o texto na tela dependendo do que a máquina usa (hora ou km)
+    const dadosModelo = especificacoesMaquinas[this.value];
     document.getElementById('label-quantidade').innerText = dadosModelo.textoLabel;
+    
+    // Esconde resultados anteriores ao trocar de máquina
+    document.getElementById('resultados').classList.add('oculto');
+    document.getElementById('btn-exportar').classList.add('oculto');
 });
 
-// 3. Função principal de cálculo
+// Formatação de moeda (R$)
+const formatarMoeda = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' });
+
+// Função principal de cálculo
 function calcular() {
-    // Captura os valores inseridos pelo usuário
     const modeloSelecionado = document.getElementById('modelo').value;
     const quantidade = parseFloat(document.getElementById('quantidade').value);
     const precoDiesel = parseFloat(document.getElementById('preco-diesel').value);
+    const msgErro = document.getElementById('msg-erro');
 
-    // Validação de segurança
-    if (isNaN(quantidade) || isNaN(precoDiesel)) {
-        alert("Por favor, preencha os campos numéricos corretamente antes de calcular.");
+    // Validação com feedback visual na tela
+    if (isNaN(quantidade) || quantidade <= 0 || isNaN(precoDiesel) || precoDiesel <= 0) {
+        msgErro.classList.remove('oculto');
+        document.getElementById('resultados').classList.add('oculto');
+        document.getElementById('btn-exportar').classList.add('oculto');
         return;
     }
+    
+    msgErro.classList.add('oculto');
 
-    // Busca os dados da máquina selecionada
     const dadosModelo = especificacoesMaquinas[modeloSelecionado];
     let litrosConsumidos = 0;
 
-    // Lógica condicional: Multiplica se for hora, divide se for Km
     if (dadosModelo.tipoCalculo === "hora") {
         litrosConsumidos = quantidade * dadosModelo.consumoBase;
     } else if (dadosModelo.tipoCalculo === "km") {
         litrosConsumidos = quantidade / dadosModelo.consumoBase;
     }
 
-    // Cálculos finais
     const custoTotal = litrosConsumidos * precoDiesel;
     const emissaoCO2 = litrosConsumidos * fatorEmissaoCO2;
 
-    // Injeta os valores calculados no HTML
-    document.getElementById('res-litros').innerText = litrosConsumidos.toFixed(1);
-    document.getElementById('res-custo').innerText = custoTotal.toFixed(2);
-    document.getElementById('res-co2').innerText = emissaoCO2.toFixed(1);
+    // Injeta os valores
+    document.getElementById('res-litros').innerText = litrosConsumidos.toFixed(1).replace('.', ',');
+    document.getElementById('res-custo').innerText = formatarMoeda.format(custoTotal);
+    document.getElementById('res-co2').innerText = emissaoCO2.toFixed(1).replace('.', ',');
 
-    // Mostra a área de resultados e o botão de exportar
+    // Mostra resultados
     document.getElementById('resultados').classList.remove('oculto');
     document.getElementById('btn-exportar').classList.remove('oculto');
 }
 
-// 4. Função para exportar os dados para Excel (formato CSV)
+// Exportar CSV
 function exportarCSV() {
-    // Capturar os textos exatos que estão na tela no momento
     const selectModelo = document.getElementById('modelo');
     const nomeMaquina = selectModelo.options[selectModelo.selectedIndex].text;
     const quantidade = document.getElementById('quantidade').value;
-    
     const litros = document.getElementById('res-litros').innerText;
-    const custo = document.getElementById('res-custo').innerText;
+    const custo = document.getElementById('res-custo').innerText.replace('R$', '').trim();
     const co2 = document.getElementById('res-co2').innerText;
     
-    // Pega a data atual para registrar o relatório
     const dataAtual = new Date().toLocaleDateString('pt-BR');
-
-    // Montar a estrutura do arquivo CSV (separado por vírgulas)
     const cabecalho = "Data,Equipamento,Uso (h/km),Combustivel (L),Custo Operacional (R$),Emissao CO2 (kg)\n";
-    const linhaDeDados = `${dataAtual},"${nomeMaquina}",${quantidade},${litros},${custo},${co2}\n`;
+    const linhaDeDados = `${dataAtual},"${nomeMaquina}",${quantidade},"${litros}","${custo}","${co2}"\n`;
     
-    // \uFEFF força o Excel a ler a codificação UTF-8 corretamente
     const conteudoCSV = "\uFEFF" + cabecalho + linhaDeDados;
-
-    // Criar o arquivo virtual na memória do navegador
     const blob = new Blob([conteudoCSV], { type: 'text/csv;charset=utf-8;' });
     const urlVirtual = URL.createObjectURL(blob);
     
-    // Forçar o download
     const linkDownload = document.createElement("a");
     linkDownload.setAttribute("href", urlVirtual);
-    
-    const nomeArquivo = "relatorio_consumo_" + dataAtual.replace(/\//g, '-') + ".csv";
-    linkDownload.setAttribute("download", nomeArquivo);
+    linkDownload.setAttribute("download", `relatorio_${dataAtual.replace(/\//g, '-')}.csv`);
     
     linkDownload.style.visibility = 'hidden';
     document.body.appendChild(linkDownload);
